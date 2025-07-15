@@ -2,7 +2,7 @@
 Configuration settings for the Resume Evaluator application.
 """
 import os
-from typing import Dict, List, Any
+from typing import Dict
 import dotenv
 
 dotenv.load_dotenv()

@@ -16,7 +16,6 @@ from components.input_form.form import display_input_form
 from components.results.evaluation_results import display_evaluation_results
 from utils.api_check import check_api_key, display_api_key_error
 
-# Import evaluation modules
 from evaluator.analyzer import ResumeAnalyzer
 from evaluator.metrics import calculate_metrics
 from evaluator.recommendations import get_detailed_recommendations
