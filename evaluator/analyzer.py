@@ -4,9 +4,9 @@ Core resume analysis logic using LangChain and Groq LLM.
 import json
 from typing import Dict, Any, List
 
-from langchain.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
-from langchain.prompts import PromptTemplate
 
 import config
 from evaluator.prompts import (
@@ -28,6 +28,46 @@ class ResumeAnalyzer:
             model=config.LLM_MODEL, 
             temperature=config.TEMPERATURE
         )
+        self.output_parser = StrOutputParser()
+    
+    def _parse_json_response(self, response: str) -> Dict:
+        """
+        Parse JSON response from LLM and handle common formatting issues.
+        
+        Args:
+            response: String response from LLM
+            
+        Returns:
+            Parsed JSON as dictionary
+        """
+        # Clean up the response to extract just the JSON part
+        if "```json" in response:
+            response = response.split("```json")[1].split("```")[0].strip()
+        elif "```" in response:
+            response = response.split("```")[1].split("```")[0].strip()
+        
+        # Remove any trailing or leading non-JSON text
+        try:
+            # Find the first opening brace
+            start_idx = response.find('{')
+            if start_idx == -1:
+                raise ValueError("No JSON object found in response")
+            
+            # Find the last closing brace
+            end_idx = response.rindex('}')
+            if end_idx == -1:
+                raise ValueError("No closing brace found in response")
+            
+            # Extract just the JSON part
+            json_str = response[start_idx:end_idx+1]
+            
+            # Parse the JSON
+            return json.loads(json_str)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON: {e}")
+            print(f"Raw response: {response}")
+            # Return empty dict as fallback
+            return {}
     
     def extract_keywords_from_job(self, job_description: str) -> Dict[str, List[str]]:
         """
@@ -41,27 +81,22 @@ class ResumeAnalyzer:
         """
         prompt = get_keyword_extraction_prompt(job_description)
         
-        # Create a simple chain
-        chain = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template("{prompt}"),
-            verbose=False
+        # Create a runnable sequence
+        chain = (
+            PromptTemplate.from_template("{prompt}")
+            | self.llm
+            | self.output_parser
         )
         
         # Run the chain
-        result = chain.run(prompt=prompt)
+        result = chain.invoke({"prompt": prompt})
         
         # Parse the JSON response
         try:
-            # The LLM might include markdown code block markers, so we need to clean those
-            if "```json" in result:
-                result = result.split("```json")[1].split("```")[0].strip()
-            elif "```" in result:
-                result = result.split("```")[1].split("```")[0].strip()
-            
-            keywords = json.loads(result)
+            keywords = self._parse_json_response(result)
             return keywords
-        except json.JSONDecodeError:
+        except Exception as e:
+            print(f"Error extracting keywords: {e}")
             # Fallback if JSON parsing fails
             return {
                 "technical_skills": [],
@@ -101,28 +136,39 @@ class ResumeAnalyzer:
             evaluation_criteria=config.EVALUATION_CRITERIA
         )
         
-        # Create a simple chain
-        chain = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template("{prompt}"),
-            verbose=False
+        # Create a runnable sequence
+        chain = (
+            PromptTemplate.from_template("{prompt}")
+            | self.llm
+            | self.output_parser
         )
         
         # Run the chain
-        evaluation_result = chain.run(prompt=prompt)
+        evaluation_result = chain.invoke({"prompt": prompt})
         
-        # Return combined results
-        return {
-            "evaluation": evaluation_result,
-            "keywords": keywords
-        }
+        # Parse the JSON response
+        try:
+            evaluation_data = self._parse_json_response(evaluation_result)
+            # Return combined results
+            return {
+                "evaluation": evaluation_result,  # Keep the raw result for reference
+                "evaluation_data": evaluation_data,  # Add the structured data
+                "keywords": keywords
+            }
+        except Exception as e:
+            print(f"Error parsing evaluation result: {e}")
+            # Return raw result if parsing fails
+            return {
+                "evaluation": evaluation_result,
+                "keywords": keywords
+            }
     
     def get_detailed_suggestions(
         self,
         resume_text: str,
         job_description: str,
         evaluation_results: Dict[str, Any]
-    ) -> str:
+    ) -> Dict[str, Any]:
         """
         Get detailed suggestions for improving the resume.
         
@@ -132,7 +178,7 @@ class ResumeAnalyzer:
             evaluation_results: Results from the initial evaluation
             
         Returns:
-            Detailed suggestions as a string
+            Detailed suggestions as a dictionary
         """
         # Create suggestions prompt
         prompt = get_improvement_suggestions_prompt(
@@ -141,14 +187,21 @@ class ResumeAnalyzer:
             evaluation_results=evaluation_results
         )
         
-        # Create a simple chain
-        chain = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template("{prompt}"),
-            verbose=False
+        # Create a runnable sequence
+        chain = (
+            PromptTemplate.from_template("{prompt}")
+            | self.llm
+            | self.output_parser
         )
         
         # Run the chain
-        suggestions = chain.run(prompt=prompt)
+        suggestions_result = chain.invoke({"prompt": prompt})
         
-        return suggestions 
+        # Parse the JSON response
+        try:
+            suggestions_data = self._parse_json_response(suggestions_result)
+            return suggestions_data
+        except Exception as e:
+            print(f"Error parsing suggestions: {e}")
+            # Return raw result if parsing fails
+            return {"summary": suggestions_result} 

@@ -7,73 +7,53 @@ from typing import Dict, List, Tuple, Any
 import config
 
 
-def extract_scores_from_evaluation(evaluation_text: str) -> Dict[str, int]:
+def extract_scores_from_evaluation(evaluation_data: Dict[str, Any]) -> Dict[str, int]:
     """
-    Extract numerical scores from the LLM evaluation text.
+    Extract numerical scores from the LLM evaluation data.
     
     Args:
-        evaluation_text: The evaluation text from the LLM
+        evaluation_data: The evaluation data from the LLM as a dictionary
         
     Returns:
         Dictionary mapping criteria to scores (1-10)
     """
     scores = {}
     
-    # Look for patterns like "Relevance to Job Description: 7/10" or similar
-    for criterion in config.EVALUATION_CRITERIA:
-        # Try different patterns to find scores
-        patterns = [
-            rf"{criterion}:?\s*(\d+)(?:/10|\s*out of\s*10)",
-            rf"{criterion}.*?(\d+)(?:/10|\s*out of\s*10)",
-            rf"{criterion}.*?score:?\s*(\d+)"
-        ]
-        
-        for pattern in patterns:
-            matches = re.findall(pattern, evaluation_text, re.IGNORECASE)
-            if matches:
-                try:
-                    score = int(matches[0])
-                    # Ensure score is in range 1-10
-                    score = max(1, min(score, 10))
+    # If we have structured data, use it directly
+    if evaluation_data and "criteria_scores" in evaluation_data:
+        criteria_scores = evaluation_data.get("criteria_scores", {})
+        for criterion, data in criteria_scores.items():
+            if isinstance(data, dict) and "score" in data:
+                score = data.get("score")
+                if isinstance(score, int) and 1 <= score <= 10:
                     scores[criterion] = score
-                    break
-                except (ValueError, IndexError):
-                    continue
+    
+    # If we don't have all criteria, add defaults for missing ones
+    for criterion in config.EVALUATION_CRITERIA:
+        if criterion not in scores:
+            scores[criterion] = 5  # Default score
     
     return scores
 
 
-def extract_overall_match(evaluation_text: str) -> int:
+def extract_overall_match(evaluation_data: Dict[str, Any]) -> int:
     """
-    Extract the overall match percentage from the evaluation text.
+    Extract the overall match percentage from the evaluation data.
     
     Args:
-        evaluation_text: The evaluation text from the LLM
+        evaluation_data: The evaluation data from the LLM as a dictionary
         
     Returns:
         Overall match percentage (0-100)
     """
-    # Look for patterns like "Overall match: 75%" or "75% match"
-    patterns = [
-        r"overall match:?\s*(\d+)%",
-        r"match percentage:?\s*(\d+)%",
-        r"(\d+)%\s*match",
-        r"(\d+)%\s*overall"
-    ]
-    
-    for pattern in patterns:
-        matches = re.findall(pattern, evaluation_text, re.IGNORECASE)
-        if matches:
-            try:
-                match_percentage = int(matches[0])
-                # Ensure percentage is in range 0-100
-                match_percentage = max(0, min(match_percentage, 100))
-                return match_percentage
-            except (ValueError, IndexError):
-                continue
+    # If we have structured data, use it directly
+    if evaluation_data and "overall_match_percentage" in evaluation_data:
+        match_percentage = evaluation_data.get("overall_match_percentage")
+        if isinstance(match_percentage, int) and 0 <= match_percentage <= 100:
+            return match_percentage
     
     # If no match found, calculate from individual scores
-    scores = extract_scores_from_evaluation(evaluation_text)
+    scores = extract_scores_from_evaluation(evaluation_data)
     if scores:
         # Calculate weighted average
         weighted_sum = 0
@@ -108,12 +88,12 @@ def calculate_metrics(
     Returns:
         Dictionary with calculated metrics
     """
-    evaluation_text = evaluation_results.get("evaluation", "")
+    evaluation_data = evaluation_results.get("evaluation_data", {})
     keywords = evaluation_results.get("keywords", {})
     
     # Extract scores and match percentage
-    scores = extract_scores_from_evaluation(evaluation_text)
-    match_percentage = extract_overall_match(evaluation_text)
+    scores = extract_scores_from_evaluation(evaluation_data)
+    match_percentage = extract_overall_match(evaluation_data)
     
     # Calculate keyword metrics
     keyword_metrics = calculate_keyword_metrics(resume_text, keywords)

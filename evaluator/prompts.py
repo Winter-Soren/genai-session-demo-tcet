@@ -40,19 +40,48 @@ JOB DESCRIPTION:
 EVALUATION CRITERIA:
 {criteria_str}
 
-For each criterion, provide:
-1. A score from 1-10 (where 10 is perfect)
-2. A brief explanation for the score
-3. Specific suggestions for improvement
+Evaluate the resume and return ONLY a JSON object with the following structure:
+{{
+    "criteria_scores": {{
+        "Relevance to Job Description": {{
+            "score": 7,
+            "explanation": "Brief explanation for the score",
+            "suggestion": "Specific suggestion for improvement"
+        }},
+        // Include all criteria with their scores (1-10), explanations, and suggestions
+    }},
+    "overall_match_percentage": 75,
+    "strengths": [
+        "Strength 1",
+        "Strength 2",
+        "Strength 3"
+    ],
+    "improvements": [
+        "Area for improvement 1",
+        "Area for improvement 2",
+        "Area for improvement 3"
+    ],
+    "missing_keywords": [
+        "keyword1",
+        "keyword2",
+        "keyword3"
+    ],
+    "action_items": [
+        "Action item 1",
+        "Action item 2",
+        "Action item 3",
+        "Action item 4",
+        "Action item 5"
+    ],
+    "evaluation_summary": "A brief overall evaluation summary of the resume"
+}}
 
-Then, provide an overall assessment including:
-1. Overall match percentage (0-100%)
-2. Top 3 strengths of the resume
-3. Top 3 areas for improvement
-4. Key missing keywords or skills from the job description
-5. Suggested action items prioritized by impact
-
-Format your response as a structured evaluation with clear sections and bullet points.
+IMPORTANT REQUIREMENTS:
+1. You MUST provide EXACTLY 3 strengths and 3 areas for improvement
+2. You MUST provide at least 5 action items prioritized by impact
+3. Return ONLY valid JSON with no additional text, markdown formatting, or code blocks
+4. Ensure all scores are integers between 1 and 10
+5. Overall match percentage must be an integer between 0 and 100
 """
     return prompt
 
@@ -75,19 +104,21 @@ TASK: Extract the most important keywords and skills from the following job desc
 JOB DESCRIPTION:
 {job_description}
 
-Please provide:
-1. A list of the top 15 technical skills mentioned or implied in the job description
-2. A list of the top 10 soft skills mentioned or implied in the job description
-3. A list of the top 5 industry-specific terms or knowledge areas
-4. A list of 5 action verbs that would be effective on a resume for this role
-
-Format your response as JSON with the following structure:
+Return ONLY a JSON object with the following structure:
 {{
     "technical_skills": ["skill1", "skill2", ...],
     "soft_skills": ["skill1", "skill2", ...],
     "industry_terms": ["term1", "term2", ...],
     "action_verbs": ["verb1", "verb2", ...]
 }}
+
+IMPORTANT REQUIREMENTS:
+1. You MUST provide EXACTLY 15 technical skills
+2. You MUST provide EXACTLY 10 soft skills
+3. You MUST provide EXACTLY 5 industry-specific terms
+4. You MUST provide EXACTLY 5 action verbs
+5. Return ONLY valid JSON with no additional text, markdown formatting, or code blocks
+6. If the job description doesn't explicitly mention enough items, infer relevant ones based on the industry and role
 """
     return prompt
 
@@ -122,12 +153,38 @@ JOB DESCRIPTION:
 PREVIOUS EVALUATION RESULTS:
 {evaluation_results}
 
-Please provide:
-1. 3-5 specific content suggestions (exact phrases or bullet points to add)
-2. 2-3 structural improvements
-3. Specific wording changes to better align with the job description
-4. A before/after example of one section of the resume that could be improved
+Return ONLY a JSON object with the following structure:
+{{
+    "content_suggestions": [
+        "Specific content suggestion 1",
+        "Specific content suggestion 2",
+        "Specific content suggestion 3",
+        "Specific content suggestion 4",
+        "Specific content suggestion 5"
+    ],
+    "structural_improvements": [
+        "Structural improvement 1",
+        "Structural improvement 2",
+        "Structural improvement 3"
+    ],
+    "wording_changes": [
+        "Wording change 1",
+        "Wording change 2",
+        "Wording change 3"
+    ],
+    "before_after_example": {{
+        "section_name": "Experience",
+        "before": "Original text from the resume",
+        "after": "Improved version of the text"
+    }},
+    "summary": "A brief summary of the key improvements recommended"
+}}
 
-Format your response in clear sections with specific, actionable advice that the candidate can immediately implement.
+IMPORTANT REQUIREMENTS:
+1. You MUST provide EXACTLY 5 content suggestions
+2. You MUST provide EXACTLY 3 structural improvements
+3. You MUST provide EXACTLY 3 wording changes
+4. Return ONLY valid JSON with no additional text, markdown formatting, or code blocks
+5. Make all suggestions specific and actionable
 """
     return prompt 
