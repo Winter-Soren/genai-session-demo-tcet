@@ -5,7 +5,7 @@ from typing import Tuple
 import streamlit as st
 
 import config
-from utils.pdf_parser import extract_text_from_resume
+# from utils.pdf_parser import extract_text_from_resume
 
 def display_input_form() -> Tuple[str, str, str, str]:
     """
@@ -27,10 +27,14 @@ def display_input_form() -> Tuple[str, str, str, str]:
         if uploaded_file is not None:
             try:
                 file_type = uploaded_file.name.split(".")[-1]
-                resume_text = extract_text_from_resume(uploaded_file, file_type)
-                st.success("Resume uploaded successfully!")
-                with st.expander("Preview Extracted Text"):
-                    st.text(resume_text[:500] + "..." if len(resume_text) > 500 else resume_text)
+                # TODO: Extract text from resume
+                
+                if resume_text:
+                    st.success("Resume uploaded successfully!")
+                    with st.expander("Preview Extracted Text"):
+                        st.text(resume_text[:500] + "..." if len(resume_text) > 500 else resume_text)
+                else:
+                    st.error("Error extracting text from resume.")
             except Exception as e:
                 st.error(f"Error extracting text from resume: {str(e)}")
     
