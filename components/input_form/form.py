@@ -5,7 +5,7 @@ from typing import Tuple
 import streamlit as st
 
 import config
-# from utils.pdf_parser import extract_text_from_resume
+from utils.pdf_parser import extract_text_from_resume
 
 def display_input_form() -> Tuple[str, str, str, str]:
     """
@@ -27,7 +27,7 @@ def display_input_form() -> Tuple[str, str, str, str]:
         if uploaded_file is not None:
             try:
                 file_type = uploaded_file.name.split(".")[-1]
-                # TODO: Extract text from resume
+                resume_text = extract_text_from_resume(uploaded_file, file_type)
                 
                 if resume_text:
                     st.success("Resume uploaded successfully!")

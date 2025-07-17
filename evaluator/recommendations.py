@@ -177,7 +177,11 @@ def get_detailed_recommendations(
     
     # Get detailed suggestions from LLM
     analyzer = ResumeAnalyzer()
-    # TODO: Get detailed suggestions
+    detailed_suggestions = analyzer.get_detailed_suggestions(
+        resume_text=resume_text,
+        job_description=job_description,
+        evaluation_results=evaluation_results
+    )
     
     # Extract the summary or create a formatted detailed suggestion
     if isinstance(detailed_suggestions, dict):
